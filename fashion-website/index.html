@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Atelier Match | Find what looks like it</title>
+
+  <!-- ================= DESIGN (CSS) ================= -->
+  <style>
+    :root {
+      --paper: #ECEAF2;
+      --ink: #14121C;
+      --accent: #2B3FE0;
+      --white: #FFFFFF;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+    }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+    /* Top bar */
+    .topbar { border-bottom: 2px solid var(--ink); }
+    .topbar .wrap { display: flex; justify-content: space-between; padding: 14px 24px; font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 600; }
+
+    /* Headline */
+    .hero { padding: 64px 0 32px; }
+    h1 {
+      font-family: Georgia, "Times New Roman", serif;
+      font-weight: 400;
+      font-size: clamp(52px, 11vw, 140px);
+      line-height: 0.92;
+      letter-spacing: -0.03em;
+      margin: 0 0 24px;
+    }
+    h1 em { color: var(--accent); }
+    .hero p { font-size: 20px; max-width: 520px; line-height: 1.5; margin: 0; }
+
+    /* Upload box */
+    .drop {
+      display: block;
+      margin: 40px 0 16px;
+      padding: 56px 24px;
+      text-align: center;
+      background: var(--white);
+      border: 3px dashed var(--ink);
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s, transform 0.2s;
+    }
+    .drop:hover, .drop.over { background: var(--accent); color: var(--white); border-color: var(--accent); transform: translateY(-3px); }
+    .drop strong { display: block; font-family: Georgia, serif; font-weight: 400; font-size: 34px; margin-bottom: 6px; }
+    .drop input { display: none; }
+    .drop:focus-within { outline: 4px solid var(--accent); outline-offset: 4px; }
+
+    #status { font-size: 14px; font-weight: 600; letter-spacing: 0.04em; margin: 12px 0 8px; }
+
+    /* Customise panel */
+    .options { background: var(--white); border: 2px solid var(--ink); padding: 24px; display: grid; gap: 22px; }
+    .options h3 { font-family: Georgia, serif; font-weight: 400; font-size: 28px; margin: 0; }
+    .group-title { font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; margin: 0 0 10px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip { position: relative; }
+    .chip input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; margin: 0; cursor: pointer; }
+    .chip span {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 18px; border: 2px solid var(--ink);
+      font-weight: 600; transition: background 0.15s, color 0.15s;
+    }
+    .chip:hover span { background: var(--paper); }
+    .chip input:checked + span { background: var(--ink); color: var(--white); }
+    .chip input:focus-visible + span { outline: 3px solid var(--accent); outline-offset: 2px; }
+    .dot { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--ink); background: var(--c); }
+    .chip input:checked + span .dot { border-color: var(--white); }
+    .hint { font-size: 13px; opacity: 0.7; margin: 10px 0 0; }
+
+    /* Section titles */
+    h2 {
+      font-family: Georgia, serif; font-weight: 400;
+      font-size: clamp(32px, 5vw, 52px);
+      margin: 72px 0 24px;
+      padding-top: 16px; border-top: 2px solid var(--ink);
+    }
+
+    /* Results */
+    .results-layout { display: grid; grid-template-columns: 220px 1fr; gap: 32px; align-items: start; }
+    .yours { position: sticky; top: 16px; }
+    .yours img { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; display: block; border: 3px solid var(--accent); }
+    .label { font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; margin: 0 0 8px; }
+    .summary { font-weight: 600; margin: -8px 0 20px; }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 20px; }
+    .card { background: var(--white); border: 2px solid var(--ink); transition: transform 0.2s, box-shadow 0.2s; }
+    .card:hover { transform: translate(-4px, -4px); box-shadow: 6px 6px 0 var(--ink); }
+    .card .photo { position: relative; }
+    .card img { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; display: block; }
+    .rank {
+      position: absolute; top: 0; left: 0;
+      background: var(--ink); color: var(--white);
+      font-family: Georgia, serif; font-size: 22px;
+      width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+    }
+    .info { padding: 12px; }
+    .info b { font-size: 15px; }
+    .bar { height: 6px; background: var(--paper); margin-top: 8px; }
+    .bar div { height: 100%; background: var(--accent); }
+    .badge { display: block; margin-top: 8px; font-size: 12px; font-weight: 700; color: var(--accent); }
+    .remove {
+      margin-top: 12px; width: 100%;
+      background: var(--white); color: var(--ink);
+      border: 2px solid var(--ink); padding: 10px 16px;
+      font: inherit; font-weight: 600; cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .remove:hover { background: var(--ink); color: var(--white); }
+    .remove:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+    .empty { background: var(--white); border: 2px solid var(--ink); padding: 32px; font-size: 18px; }
+
+    footer { margin: 80px 0 40px; font-size: 14px; opacity: 0.7; max-width: 640px; line-height: 1.5; }
+
+    @media (max-width: 700px) {
+      .results-layout { grid-template-columns: 1fr; }
+      .yours { position: static; width: 180px; }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- ================= CONTENT (HTML) ================= -->
+  <div class="topbar"><div class="wrap"><span>Atelier Match</span><span id="count"></span></div></div>
+
+  <div class="wrap">
+    <section class="hero">
+      <h1>Find what <em>looks</em> like it.</h1>
+      <p>Upload a photo of any clothing item. We search our collection and show the five closest matches.</p>
+    </section>
+
+    <!-- Upload box: click it or drag a photo onto it -->
+    <label class="drop" id="drop">
+      <strong>Drop a photo here</strong>
+      or click to choose one
+      <input type="file" id="photo" accept="image/*">
+    </label>
+
+    <!-- Customise panel: changing any choice updates the results straight away -->
+    <section class="options">
+      <h3>Customise</h3>
+
+      <div>
+        <p class="group-title">Gender</p>
+        <div class="chips">
+          <label class="chip"><input type="radio" name="gender" value="all" checked><span>All</span></label>
+          <label class="chip"><input type="radio" name="gender" value="women"><span>Women</span></label>
+          <label class="chip"><input type="radio" name="gender" value="men"><span>Men</span></label>
+        </div>
+      </div>
+
+      <div>
+        <p class="group-title">Skin tone</p>
+        <div class="chips">
+          <label class="chip"><input type="radio" name="skin" value="none" checked><span>Not set</span></label>
+          <label class="chip"><input type="radio" name="skin" value="fair"><span><i class="dot" style="--c:#F6DCC8"></i>Fair</span></label>
+          <label class="chip"><input type="radio" name="skin" value="light"><span><i class="dot" style="--c:#EBC4A0"></i>Light</span></label>
+          <label class="chip"><input type="radio" name="skin" value="medium"><span><i class="dot" style="--c:#D4A075"></i>Medium</span></label>
+          <label class="chip"><input type="radio" name="skin" value="tan"><span><i class="dot" style="--c:#A9714B"></i>Tan</span></label>
+          <label class="chip"><input type="radio" name="skin" value="deep"><span><i class="dot" style="--c:#5E3A26"></i>Deep</span></label>
+        </div>
+        <p class="hint">We use this only to highlight colours that generally suit your tone. It is never saved.</p>
+      </div>
+
+      <div>
+        <p class="group-title">Show me</p>
+        <div class="chips">
+          <label class="chip"><input type="radio" name="type" value="any" checked><span>Anything</span></label>
+          <label class="chip"><input type="radio" name="type" value="outfit"><span>Full outfits</span></label>
+          <label class="chip"><input type="radio" name="type" value="top"><span>Tops</span></label>
+          <label class="chip"><input type="radio" name="type" value="bottom"><span>Bottoms</span></label>
+        </div>
+      </div>
+    </section>
+
+    <p id="status">Reading the collection...</p>
+
+    <!-- Filled in by the code below after upload -->
+    <div id="results"></div>
+
+    <h2>The collection</h2>
+    <div class="grid" id="collection"></div>
+
+    <footer>Matches are based on colour. Skin tone suggestions are general styling ideas, not strict rules. Built as a project demo.</footer>
+  </div>
+
+  <!-- ================= LOGIC (JavaScript) ================= -->
+  <script>
+    // Our dataset: every picture in the "images" folder with a few labels.
+    // To add a picture: copy it into "images" and add one line here.
+    const ITEMS = [
+      { file: "item1.jpeg",  gender: "women",  type: "outfit", color: "brown"  },
+      { file: "item2.jpeg",  gender: "women",  type: "outfit", color: "maroon" },
+      { file: "item3.jpeg",  gender: "women",  type: "outfit", color: "purple" },
+      { file: "item4.jpeg",  gender: "women",  type: "outfit", color: "maroon" },
+      { file: "item5.jpeg",  gender: "women",  type: "outfit", color: "black"  },
+      { file: "item6.jpeg",  gender: "women",  type: "outfit", color: "navy"   },
+      { file: "item7.jpeg",  gender: "women",  type: "outfit", color: "blue"   },
+      { file: "item8.jpeg",  gender: "women",  type: "outfit", color: "cream"  },
+      { file: "item9.jpeg",  gender: "women",  type: "outfit", color: "beige"  },
+      { file: "item10.jpeg", gender: "women",  type: "outfit", color: "beige"  },
+      { file: "item11.jpeg", gender: "men",    type: "outfit", color: "brown"  },
+      { file: "item12.jpeg", gender: "men",    type: "top",    color: "navy"   },
+      { file: "item13.jpeg", gender: "men",    type: "top",    color: "blue"   },
+      { file: "item14.jpeg", gender: "men",    type: "top",    color: "black"  },
+      { file: "item15.jpeg", gender: "unisex", type: "bottom", color: "cream"  },
+      { file: "item16.jpeg", gender: "unisex", type: "bottom", color: "brown"  },
+      { file: "item17.jpeg", gender: "unisex", type: "bottom", color: "black"  },
+      { file: "item18.jpeg", gender: "unisex", type: "bottom", color: "grey"   }
+    ];
+
+    // General styling ideas: which colours tend to suit each skin tone.
+    // (Edit these lists any time.)
+    const SKIN_COLOURS = {
+      fair:   ["navy", "maroon", "blue", "purple", "grey"],
+      light:  ["navy", "blue", "maroon", "brown", "grey"],
+      medium: ["maroon", "navy", "brown", "cream", "beige", "blue"],
+      tan:    ["cream", "beige", "blue", "purple", "brown"],
+      deep:   ["cream", "blue", "purple", "maroon", "beige"]
+    };
+
+    const catalog = [];   // every dataset item plus its colour "fingerprint"
+    let lastPhoto = null; // the photo the user uploaded (kept so options can update results)
+
+    // Load a picture so we can look at its pixels
+    function loadImage(src) {
+      return new Promise(function (done, fail) {
+        const img = new Image();
+        img.onload = function () { done(img); };
+        img.onerror = function () { fail(new Error("Could not load " + src)); };
+        img.src = src;
+      });
+    }
+
+    // Read which option is selected in the Customise panel
+    function chosen(name) {
+      return document.querySelector('input[name="' + name + '"]:checked').value;
+    }
+
+    // STEP 1: turn a picture into a list of numbers (its "colour fingerprint").
+    function getFingerprint(img) {
+      // Shrink the middle of the picture to 64x64 pixels (ignores the edges / background)
+      const canvas = document.createElement("canvas");
+      canvas.width = 64;
+      canvas.height = 64;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, img.width * 0.2, img.height * 0.15, img.width * 0.6, img.height * 0.7, 0, 0, 64, 64);
+      const pixels = ctx.getImageData(0, 0, 64, 64).data;
+
+      // Count how many pixels fall into each of 64 colour groups
+      const counts = new Array(64).fill(0);
+      for (let i = 0; i < pixels.length; i += 4) {
+        const r = pixels[i], g = pixels[i + 1], b = pixels[i + 2];
+        if (r > 225 && g > 225 && b > 225) continue;           // skip white background
+        const group = (r >> 6) * 16 + (g >> 6) * 4 + (b >> 6);  // pick 1 of 64 colour groups
+        counts[group]++;
+      }
+
+      // Soften big numbers, then scale so the whole list has length 1
+      const soft = counts.map(function (n) { return Math.sqrt(n); });
+      const length = Math.sqrt(soft.reduce(function (sum, n) { return sum + n * n; }, 0)) || 1;
+      return soft.map(function (n) { return n / length; });
+    }
+
+    // STEP 2: compare two fingerprints (1 = identical, 0 = completely different)
+    function similarity(a, b) {
+      let total = 0;
+      for (let i = 0; i < a.length; i++) total += a[i] * b[i];
+      return total;
+    }
+
+    // STEP 3: when the page opens, make a fingerprint for every dataset picture
+    async function start() {
+      try {
+        document.getElementById("count").textContent = ITEMS.length + " pieces";
+        let cards = "";
+        for (let i = 0; i < ITEMS.length; i++) {
+          const img = await loadImage("images/" + ITEMS[i].file);
+          catalog.push({ ...ITEMS[i], fingerprint: getFingerprint(img) });
+          cards += '<div class="card"><div class="photo"><img src="images/' + ITEMS[i].file + '" alt="Collection piece ' + (i + 1) + '"></div></div>';
+        }
+        document.getElementById("collection").innerHTML = cards;
+        document.getElementById("status").textContent = "Ready. " + ITEMS.length + " pieces learned. Upload a photo.";
+      } catch (error) {
+        document.getElementById("status").textContent = "Error: " + error.message;
+      }
+    }
+
+    // STEP 4: filter by the user's choices, score every piece, show the best 5
+    function showResults() {
+      if (!lastPhoto) return;
+      const gender = chosen("gender");
+      const type = chosen("type");
+      const skin = chosen("skin");
+
+      const scored = [];
+      catalog.forEach(function (item) {
+        // Skip pieces that don't fit the Gender / Show me choices
+        if (gender !== "all" && item.gender !== "unisex" && item.gender !== gender) return;
+        if (type !== "any" && item.type !== type) return;
+
+        const similar = similarity(lastPhoto.fingerprint, item.fingerprint);
+        const suits = skin !== "none" && SKIN_COLOURS[skin].includes(item.color);
+        // Pieces in a flattering colour get a small boost
+        scored.push({ file: item.file, similar: similar, suits: suits, points: similar + (suits ? 0.1 : 0) });
+      });
+
+      scored.sort(function (a, b) { return b.points - a.points; });
+     const top5 = scored;
+
+      // Build the 5 cards
+      let cards = "";
+      top5.forEach(function (m, i) {
+        const percent = Math.round(m.similar * 100);
+        cards += '<div class="card"><div class="photo"><img src="images/' + m.file + '" alt="Match ' + (i + 1) + '"><span class="rank">' + (i + 1) + '</span></div>' +
+                 '<div class="info"><b>' + percent + '% similar</b><div class="bar"><div style="width:' + percent + '%"></div></div>' +
+                 (m.suits ? '<span class="badge">&#10003; Suits your skin tone</span>' : '') + '</div></div>';
+      });
+
+      const body = top5.length > 0
+        ? '<p class="summary">Showing the best of ' + scored.length + ' pieces that fit your choices.</p><div class="grid">' + cards + '</div>'
+        : '<div class="empty">No pieces fit these choices. Try setting Gender or Show me back to "All" / "Anything".</div>';
+
+      document.getElementById("results").innerHTML =
+        '<h2>Your closest matches</h2>' +
+        '<div class="results-layout">' +
+          '<div class="yours"><p class="label">Your photo</p><img src="' + lastPhoto.url + '" alt="Your uploaded photo">' +
+            '<button class="remove" onclick="removePhoto()">Remove photo</button></div>' +
+          '<div>' + body + '</div>' +
+        '</div>';
+    }
+
+    // When the user uploads a photo, remember it and show the results
+    async function handlePhoto(file) {
+      if (!file) return;
+      const url = URL.createObjectURL(file);
+      const img = await loadImage(url);
+      lastPhoto = { url: url, fingerprint: getFingerprint(img) };
+      showResults();
+      document.getElementById("results").scrollIntoView({ behavior: "smooth" });
+    }
+
+    // Remove the uploaded photo and clear the results
+    function removePhoto() {
+      if (lastPhoto) URL.revokeObjectURL(lastPhoto.url);   // free the memory
+      lastPhoto = null;                                    // forget the photo
+      document.getElementById("photo").value = "";         // so the same file can be chosen again
+      document.getElementById("results").innerHTML = "";   // clear the results
+      document.getElementById("status").textContent = "Ready. " + ITEMS.length + " pieces learned. Upload a photo.";
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    // Connect the page to the code above
+    const drop = document.getElementById("drop");
+    document.getElementById("photo").addEventListener("change", function (e) { handlePhoto(e.target.files[0]); });
+    drop.addEventListener("dragover", function (e) { e.preventDefault(); drop.classList.add("over"); });
+    drop.addEventListener("dragleave", function () { drop.classList.remove("over"); });
+    drop.addEventListener("drop", function (e) {
+      e.preventDefault();
+      drop.classList.remove("over");
+      handlePhoto(e.dataTransfer.files[0]);
+    });
+    // Any change in the Customise panel updates the results
+    document.querySelectorAll(".options input").forEach(function (box) {
+      box.addEventListener("change", showResults);
+    });
+
+    start();
+  </script>
+</body>
+</html>
